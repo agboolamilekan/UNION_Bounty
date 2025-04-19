@@ -19,6 +19,10 @@
     ],
     "post_url": "https://union-vouching-graph.vercel.app/api/frame"
   },
+  "fc:notification": {
+    "webhook_url": "https://union-vouching-graph.vercel.app/api/notifications/webhook",
+    "enabled": true
+  },
   "start_url": "/",
   "display": "standalone",
   "theme_color": "#8b5cf6",

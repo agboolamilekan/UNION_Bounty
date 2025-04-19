@@ -3,6 +3,7 @@ import "./globals.css"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import { ThemeProvider } from "@/components/theme-provider"
+import Script from "next/script"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -51,6 +52,16 @@ export default function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           {children}
         </ThemeProvider>
+
+        {/* Add debugging script */}
+        <Script id="debug-script" strategy="afterInteractive">
+          {`
+            console.log("App initialized");
+            window.addEventListener('error', function(e) {
+              console.error('Global error:', e.message, e.filename, e.lineno);
+            });
+          `}
+        </Script>
       </body>
     </html>
   )

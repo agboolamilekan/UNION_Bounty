@@ -3,48 +3,67 @@
 import { useEffect, useState } from "react"
 import { LoadingScreen } from "@/components/loading-screen"
 import { GraphVisualization } from "@/components/graph-visualization"
+import { NotificationManager } from "@/components/notification-manager"
 import { fetchVouchingData } from "@/lib/api"
 import type { GraphData } from "@/lib/types"
+
+// Add this to fix the "window is not defined" error during SSR
+declare global {
+  interface Window {
+    farcaster?: any
+  }
+}
 
 export default function Home() {
   const [isLoading, setIsLoading] = useState(true)
   const [graphData, setGraphData] = useState<GraphData | null>(null)
   const [currentUser, setCurrentUser] = useState<string | null>(null)
+  const [userFid, setUserFid] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [isMounted, setIsMounted] = useState(false)
   const [isFarcasterAvailable, setIsFarcasterAvailable] = useState(false)
 
+  // This useEffect ensures we only run client-side code after mounting
   useEffect(() => {
     setIsMounted(true)
+  }, [])
 
-    // Initialize Farcaster client and fetch data
+  // This separate useEffect handles Farcaster initialization and data fetching
+  useEffect(() => {
+    // Skip if not mounted yet (we're still in SSR)
+    if (!isMounted) return
+
     const initAndFetch = async () => {
       try {
-        // Check if we're in the browser
-        if (typeof window === "undefined") return
-
+        console.log("Initializing app...")
         let fid = null
 
         // Check if Farcaster client is available
-        if (window.farcaster) {
+        if (typeof window !== "undefined" && window.farcaster) {
+          console.log("Farcaster client detected")
           setIsFarcasterAvailable(true)
+
           try {
-            // @ts-ignore - Farcaster client is injected by Warpcast
             const client = window.farcaster.getClient()
             if (client) {
+              console.log("Getting current user...")
               const { data: userData } = await client.fetchCurrentUser()
               fid = userData?.fid?.toString() || null
+              setUserFid(fid)
               setCurrentUser(fid)
+              console.log("Current user FID:", fid)
             }
           } catch (e) {
-            console.log("Error getting Farcaster user:", e)
+            console.error("Error getting Farcaster user:", e)
           }
         } else {
           console.log("Farcaster client not available")
         }
 
         // Fetch vouching data
+        console.log("Fetching vouching data...")
         const data = await fetchVouchingData()
+        console.log("Data fetched:", data ? "success" : "failed")
 
         // Process the data to ensure it's in the correct format
         const processedData = {
@@ -73,7 +92,7 @@ export default function Home() {
     }
 
     initAndFetch()
-  }, [])
+  }, [isMounted])
 
   // Don't render anything during SSR
   if (!isMounted) {
@@ -122,6 +141,8 @@ export default function Home() {
           For the best experience, open this app in Warpcast
         </div>
       )}
+
+      <NotificationManager fid={userFid} />
 
       <div className="w-full h-[80vh] bg-white dark:bg-gray-900 rounded-lg shadow-lg overflow-hidden">
         <GraphVisualization data={graphData} currentUser={currentUser} />
