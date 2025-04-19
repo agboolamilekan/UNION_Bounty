@@ -47,6 +47,17 @@ export default function RootLayout({
 
         {/* Farcaster Mini App manifest */}
         <link rel="farcaster-app" href="/manifest.json" />
+
+        {/* D3 specific styles */}
+        <style
+          dangerouslySetInnerHTML={{
+            __html: `
+          .link { stroke: #999; stroke-opacity: 0.6; stroke-width: 1px; }
+          .link-highlighted { stroke: #ff4500; stroke-opacity: 1; stroke-width: 2px; }
+          .node-label { font-size: 12px; fill: #333; pointer-events: none; }
+        `,
+          }}
+        />
       </head>
       <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>

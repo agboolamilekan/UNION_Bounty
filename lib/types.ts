@@ -1,20 +1,22 @@
-export interface UserNode {
+export interface GraphNode {
   id: string
   name?: string
-  img?: string
   ens?: string
   fname?: string
+  address?: string
+  img?: string
+  pfp?: string
   fid?: string
 }
 
-export interface VouchLink {
-  id: string
-  source: string
-  target: string
+export interface GraphLink {
+  id?: string
+  source: string | GraphNode
+  target: string | GraphNode
   timestamp?: number
 }
 
 export interface GraphData {
-  nodes: UserNode[]
-  links: VouchLink[]
+  nodes: GraphNode[]
+  links: GraphLink[]
 }

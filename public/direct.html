@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Union Vouching Graph</title>
+    <style>
+        body { margin: 0; font-family: Arial, sans-serif; }
+        #graph { width: 100vw; height: 100vh; background: #f0f0f0; }
+        .link { stroke: #999; stroke-opacity: 0.6; stroke-width: 1px; }
+        .link-highlighted { stroke: #ff4500; stroke-opacity: 1; stroke-width: 2px; }
+        .node-label { font-size: 12px; fill: #333; pointer-events: none; }
+    </style>
+</head>
+<body>
+    <div id="graph"></div>
+
+    <!-- Include D3.js for graph visualization -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <!-- Include ethers.js for ENS resolution -->
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+    <!-- Load the script -->
+    <script src="script.js"></script>
+</body>
+</html>

@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react"
 import { LoadingScreen } from "@/components/loading-screen"
-import { GraphVisualization } from "@/components/graph-visualization"
+import { D3Graph } from "@/components/d3-graph"
+import { FallbackGraph } from "@/components/fallback-graph"
 import { NotificationManager } from "@/components/notification-manager"
 import { fetchVouchingData } from "@/lib/api"
 import type { GraphData } from "@/lib/types"
@@ -17,11 +18,12 @@ declare global {
 export default function Home() {
   const [isLoading, setIsLoading] = useState(true)
   const [graphData, setGraphData] = useState<GraphData | null>(null)
-  const [currentUser, setCurrentUser] = useState<string | null>(null)
   const [userFid, setUserFid] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [isMounted, setIsMounted] = useState(false)
   const [isFarcasterAvailable, setIsFarcasterAvailable] = useState(false)
+  const [useENS, setUseENS] = useState(true)
+  const [ensError, setEnsError] = useState<string | null>(null)
 
   // This useEffect ensures we only run client-side code after mounting
   useEffect(() => {
@@ -50,7 +52,6 @@ export default function Home() {
               const { data: userData } = await client.fetchCurrentUser()
               fid = userData?.fid?.toString() || null
               setUserFid(fid)
-              setCurrentUser(fid)
               console.log("Current user FID:", fid)
             }
           } catch (e) {
@@ -65,24 +66,7 @@ export default function Home() {
         const data = await fetchVouchingData()
         console.log("Data fetched:", data ? "success" : "failed")
 
-        // Process the data to ensure it's in the correct format
-        const processedData = {
-          nodes: data.nodes.map((node) => ({
-            ...node,
-            // Ensure id is a string
-            id: String(node.id),
-          })),
-          links: data.links.map((link) => ({
-            ...link,
-            // Ensure id is a string
-            id: String(link.id),
-            // Ensure source and target are strings
-            source: String(typeof link.source === "object" ? link.source.id : link.source),
-            target: String(typeof link.target === "object" ? link.target.id : link.target),
-          })),
-        }
-
-        setGraphData(processedData)
+        setGraphData(data)
       } catch (err) {
         console.error("Error initializing:", err)
         setError("Failed to initialize. Please try again.")
@@ -93,6 +77,13 @@ export default function Home() {
 
     initAndFetch()
   }, [isMounted])
+
+  // Handle ENS resolution errors
+  const handleENSError = (error: string) => {
+    console.error("ENS resolution error:", error)
+    setEnsError(error)
+    setUseENS(false)
+  }
 
   // Don't render anything during SSR
   if (!isMounted) {
@@ -142,10 +133,31 @@ export default function Home() {
         </div>
       )}
 
+      {ensError && (
+        <div className="mb-4 p-3 bg-yellow-100 text-yellow-800 rounded-md text-sm">
+          ENS resolution failed: {ensError}. Using address display instead.
+        </div>
+      )}
+
+      <div className="flex gap-2 mb-4">
+        <button
+          onClick={() => setUseENS(true)}
+          className={`px-3 py-1 text-sm rounded ${useENS ? "bg-purple-600 text-white" : "bg-gray-200 text-gray-700"}`}
+        >
+          Use ENS Resolution
+        </button>
+        <button
+          onClick={() => setUseENS(false)}
+          className={`px-3 py-1 text-sm rounded ${!useENS ? "bg-purple-600 text-white" : "bg-gray-200 text-gray-700"}`}
+        >
+          Use Addresses
+        </button>
+      </div>
+
       <NotificationManager fid={userFid} />
 
       <div className="w-full h-[80vh] bg-white dark:bg-gray-900 rounded-lg shadow-lg overflow-hidden">
-        <GraphVisualization data={graphData} currentUser={currentUser} />
+        {useENS ? <D3Graph data={graphData} onError={handleENSError} /> : <FallbackGraph data={graphData} />}
       </div>
 
       <div className="mt-4 text-sm text-gray-600 dark:text-gray-400">
