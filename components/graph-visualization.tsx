@@ -1,10 +1,12 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { ForceGraph2D } from "react-force-graph"
-import type { GraphData, UserNode, VouchLink } from "@/lib/types"
-import Image from "next/image"
-import { TooltipProvider } from "@/components/ui/tooltip"
+import dynamic from "next/dynamic"
+import type { GraphData } from "@/lib/types"
+
+// Use ForceGraph2D from react-force-graph-2d instead of the full package
+// This version doesn't depend on A-Frame
+const ForceGraph2D = dynamic(() => import("react-force-graph-2d").then((mod) => mod.default), { ssr: false })
 
 interface GraphVisualizationProps {
   data: GraphData
@@ -17,6 +19,12 @@ export function GraphVisualization({ data, currentUser }: GraphVisualizationProp
   const [selectedNode, setSelectedNode] = useState<string | null>(null)
   const [highlightLinks, setHighlightLinks] = useState<Set<string>>(new Set())
   const [highlightNodes, setHighlightNodes] = useState<Set<string>>(new Set())
+  const [isClient, setIsClient] = useState(false)
+
+  // Set isClient to true on component mount
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
 
   // Update dimensions on resize
   useEffect(() => {
@@ -36,7 +44,7 @@ export function GraphVisualization({ data, currentUser }: GraphVisualizationProp
   }, [])
 
   // Handle node selection
-  const handleNodeClick = (node: UserNode) => {
+  const handleNodeClick = (node: any) => {
     const nodeId = node.id
 
     if (selectedNode === nodeId) {
@@ -54,9 +62,12 @@ export function GraphVisualization({ data, currentUser }: GraphVisualizationProp
     const connectedNodes = new Set<string>([nodeId])
 
     data.links.forEach((link) => {
-      if (link.source === nodeId || link.target === nodeId) {
+      const sourceId = typeof link.source === "object" ? link.source.id : link.source
+      const targetId = typeof link.target === "object" ? link.target.id : link.target
+
+      if (sourceId === nodeId || targetId === nodeId) {
         connectedLinks.add(link.id)
-        connectedNodes.add(link.source === nodeId ? link.target : link.source)
+        connectedNodes.add(sourceId === nodeId ? targetId : sourceId)
       }
     })
 
@@ -65,7 +76,7 @@ export function GraphVisualization({ data, currentUser }: GraphVisualizationProp
   }
 
   // Calculate node color based on selection state
-  const getNodeColor = (node: UserNode) => {
+  const getNodeColor = (node: any) => {
     if (node.id === currentUser) return "#ff3e00" // Current user
     if (node.id === selectedNode) return "#8b5cf6" // Selected node
     if (highlightNodes.has(node.id)) return "#a78bfa" // Connected node
@@ -73,23 +84,34 @@ export function GraphVisualization({ data, currentUser }: GraphVisualizationProp
   }
 
   // Calculate link color and width based on selection state
-  const getLinkColor = (link: VouchLink) => {
+  const getLinkColor = (link: any) => {
     return highlightLinks.has(link.id) ? "#8b5cf6" : "#e2e8f0"
   }
 
-  const getLinkWidth = (link: VouchLink) => {
+  const getLinkWidth = (link: any) => {
     return highlightLinks.has(link.id) ? 3 : 1
+  }
+
+  if (!isClient) {
+    return (
+      <div ref={containerRef} className="w-full h-full flex items-center justify-center">
+        <div className="text-center p-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-700 mx-auto mb-4"></div>
+          <p>Loading graph visualization...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
     <div ref={containerRef} className="w-full h-full">
-      <TooltipProvider>
+      {isClient && dimensions.width > 0 && (
         <ForceGraph2D
           width={dimensions.width}
           height={dimensions.height}
           graphData={data}
           nodeId="id"
-          nodeLabel={(node: any) => node.name || node.id}
+          nodeLabel={(node) => node.name || node.id}
           nodeColor={getNodeColor}
           nodeRelSize={6}
           linkColor={getLinkColor}
@@ -97,7 +119,7 @@ export function GraphVisualization({ data, currentUser }: GraphVisualizationProp
           linkDirectionalArrowLength={3}
           linkDirectionalArrowRelPos={1}
           onNodeClick={handleNodeClick}
-          nodeCanvasObject={(node: any, ctx, globalScale) => {
+          nodeCanvasObject={(node, ctx, globalScale) => {
             const { x, y, id, name, img } = node
             const size = 6
             const fontSize = 12 / globalScale
@@ -152,7 +174,7 @@ export function GraphVisualization({ data, currentUser }: GraphVisualizationProp
             }
           }}
         />
-      </TooltipProvider>
+      )}
     </div>
   )
 }

@@ -1,39 +1,63 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
 import { LoadingScreen } from "@/components/loading-screen"
 import { GraphVisualization } from "@/components/graph-visualization"
 import { fetchVouchingData } from "@/lib/api"
 import type { GraphData } from "@/lib/types"
 
 export default function Home() {
-  const router = useRouter()
   const [isLoading, setIsLoading] = useState(true)
   const [graphData, setGraphData] = useState<GraphData | null>(null)
   const [currentUser, setCurrentUser] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [isMounted, setIsMounted] = useState(false)
 
   useEffect(() => {
-    // Initialize Farcaster client
-    const initFarcaster = async () => {
+    setIsMounted(true)
+
+    // Initialize Farcaster client and fetch data
+    const initAndFetch = async () => {
       try {
-        // @ts-ignore - Farcaster client is injected by Warpcast
-        const client = window.farcaster?.getClient()
+        // Check if we're in the browser
+        if (typeof window === "undefined") return
 
-        if (!client) {
-          setError("Farcaster client not found. Please open in Warpcast.")
-          setIsLoading(false)
-          return
+        let fid = null
+
+        // Try to get Farcaster client
+        try {
+          // @ts-ignore - Farcaster client is injected by Warpcast
+          const client = window.farcaster?.getClient()
+          if (client) {
+            const { data: userData } = await client.fetchCurrentUser()
+            fid = userData?.fid?.toString() || null
+            setCurrentUser(fid)
+          }
+        } catch (e) {
+          console.log("Farcaster client not available:", e)
         }
-
-        // Get current user
-        const { data: userData } = await client.fetchCurrentUser()
-        setCurrentUser(userData?.fid?.toString() || null)
 
         // Fetch vouching data
         const data = await fetchVouchingData()
-        setGraphData(data)
+
+        // Process the data to ensure it's in the correct format
+        const processedData = {
+          nodes: data.nodes.map((node) => ({
+            ...node,
+            // Ensure id is a string
+            id: String(node.id),
+          })),
+          links: data.links.map((link) => ({
+            ...link,
+            // Ensure id is a string
+            id: String(link.id),
+            // Ensure source and target are strings
+            source: String(typeof link.source === "object" ? link.source.id : link.source),
+            target: String(typeof link.target === "object" ? link.target.id : link.target),
+          })),
+        }
+
+        setGraphData(processedData)
       } catch (err) {
         console.error("Error initializing:", err)
         setError("Failed to initialize. Please try again.")
@@ -42,8 +66,13 @@ export default function Home() {
       }
     }
 
-    initFarcaster()
+    initAndFetch()
   }, [])
+
+  // Don't render anything during SSR
+  if (!isMounted) {
+    return null
+  }
 
   if (isLoading) {
     return <LoadingScreen />
