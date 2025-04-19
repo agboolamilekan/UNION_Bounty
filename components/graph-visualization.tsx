@@ -20,6 +20,7 @@ export function GraphVisualization({ data, currentUser }: GraphVisualizationProp
   const [highlightLinks, setHighlightLinks] = useState<Set<string>>(new Set())
   const [highlightNodes, setHighlightNodes] = useState<Set<string>>(new Set())
   const [isClient, setIsClient] = useState(false)
+  const [selectedNodeData, setSelectedNodeData] = useState<any>(null)
 
   // Set isClient to true on component mount
   useEffect(() => {
@@ -50,12 +51,14 @@ export function GraphVisualization({ data, currentUser }: GraphVisualizationProp
     if (selectedNode === nodeId) {
       // Deselect if clicking the same node
       setSelectedNode(null)
+      setSelectedNodeData(null)
       setHighlightLinks(new Set())
       setHighlightNodes(new Set())
       return
     }
 
     setSelectedNode(nodeId)
+    setSelectedNodeData(node)
 
     // Find all links connected to this node
     const connectedLinks = new Set<string>()
@@ -92,6 +95,11 @@ export function GraphVisualization({ data, currentUser }: GraphVisualizationProp
     return highlightLinks.has(link.id) ? 3 : 1
   }
 
+  // Get display name for a node (ENS or Farcaster name)
+  const getDisplayName = (node: any) => {
+    return node.ens || node.fname || node.name || node.id
+  }
+
   if (!isClient) {
     return (
       <div ref={containerRef} className="w-full h-full flex items-center justify-center">
@@ -104,64 +112,63 @@ export function GraphVisualization({ data, currentUser }: GraphVisualizationProp
   }
 
   return (
-    <div ref={containerRef} className="w-full h-full">
-      {isClient && dimensions.width > 0 && (
-        <ForceGraph2D
-          width={dimensions.width}
-          height={dimensions.height}
-          graphData={data}
-          nodeId="id"
-          nodeLabel={(node) => node.name || node.id}
-          nodeColor={getNodeColor}
-          nodeRelSize={6}
-          linkColor={getLinkColor}
-          linkWidth={getLinkWidth}
-          linkDirectionalArrowLength={3}
-          linkDirectionalArrowRelPos={1}
-          onNodeClick={handleNodeClick}
-          nodeCanvasObject={(node, ctx, globalScale) => {
-            const { x, y, id, name, img } = node
-            const size = 6
-            const fontSize = 12 / globalScale
-            const label = name || id
+    <div className="relative w-full h-full">
+      <div ref={containerRef} className="w-full h-full">
+        {isClient && dimensions.width > 0 && (
+          <ForceGraph2D
+            width={dimensions.width}
+            height={dimensions.height}
+            graphData={data}
+            nodeId="id"
+            nodeLabel={(node) => getDisplayName(node)}
+            nodeColor={getNodeColor}
+            nodeRelSize={6}
+            linkColor={getLinkColor}
+            linkWidth={getLinkWidth}
+            linkDirectionalArrowLength={3}
+            linkDirectionalArrowRelPos={1}
+            onNodeClick={handleNodeClick}
+            nodeCanvasObject={(node, ctx, globalScale) => {
+              const { x, y, id } = node
+              const size = 6
+              const fontSize = 12 / globalScale
+              const label = getDisplayName(node)
 
-            // Draw node circle
-            ctx.beginPath()
-            ctx.arc(x, y, size, 0, 2 * Math.PI)
-            ctx.fillStyle = getNodeColor(node)
-            ctx.fill()
-
-            // Draw profile picture if available
-            if (img && globalScale > 0.5) {
-              const imgSize = size * 1.8
-              const imgX = x - imgSize / 2
-              const imgY = y - imgSize / 2
-
-              // Create circular clipping path
-              ctx.save()
+              // Draw node circle
               ctx.beginPath()
-              ctx.arc(x, y, imgSize / 2, 0, 2 * Math.PI)
-              ctx.clip()
+              ctx.arc(x, y, size, 0, 2 * Math.PI)
+              ctx.fillStyle = getNodeColor(node)
+              ctx.fill()
 
-              // Draw the image
-              try {
-                const image = new Image()
-                image.src = img
-                image.crossOrigin = "anonymous"
-                ctx.drawImage(image, imgX, imgY, imgSize, imgSize)
-              } catch (e) {
-                console.error("Error drawing image:", e)
+              // Draw profile picture if available
+              if (node.img && globalScale > 0.5) {
+                const imgSize = size * 1.8
+                const imgX = x - imgSize / 2
+                const imgY = y - imgSize / 2
+
+                // Create circular clipping path
+                ctx.save()
+                ctx.beginPath()
+                ctx.arc(x, y, imgSize / 2, 0, 2 * Math.PI)
+                ctx.clip()
+
+                // Draw the image
+                try {
+                  const image = new Image()
+                  image.src = node.img
+                  image.crossOrigin = "anonymous"
+                  ctx.drawImage(image, imgX, imgY, imgSize, imgSize)
+                } catch (e) {
+                  console.error("Error drawing image:", e)
+                }
+
+                ctx.restore()
               }
 
-              ctx.restore()
-            }
-
-            // Draw label if zoomed in enough
-            if (globalScale > 1.2 || node.id === selectedNode) {
+              // Always draw label for better visibility of ENS/Farcaster names
               ctx.font = `${fontSize}px Sans-Serif`
               ctx.textAlign = "center"
               ctx.textBaseline = "middle"
-              ctx.fillStyle = "rgba(0, 0, 0, 0.8)"
 
               // Draw background for text
               const textWidth = ctx.measureText(label).width
@@ -171,9 +178,30 @@ export function GraphVisualization({ data, currentUser }: GraphVisualizationProp
               // Draw text
               ctx.fillStyle = "#000"
               ctx.fillText(label, x, y + size + fontSize / 2 + 2)
-            }
-          }}
-        />
+            }}
+          />
+        )}
+      </div>
+
+      {/* Node details panel */}
+      {selectedNodeData && (
+        <div className="absolute top-4 right-4 bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg max-w-xs">
+          <h3 className="font-bold text-lg mb-2">{getDisplayName(selectedNodeData)}</h3>
+          {selectedNodeData.ens && <p className="text-sm mb-1">ENS: {selectedNodeData.ens}</p>}
+          {selectedNodeData.fname && <p className="text-sm mb-1">Farcaster: {selectedNodeData.fname}</p>}
+          {selectedNodeData.fid && <p className="text-sm mb-1">FID: {selectedNodeData.fid}</p>}
+          <button
+            onClick={() => {
+              setSelectedNode(null)
+              setSelectedNodeData(null)
+              setHighlightLinks(new Set())
+              setHighlightNodes(new Set())
+            }}
+            className="mt-2 text-xs px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded"
+          >
+            Close
+          </button>
+        </div>
       )}
     </div>
   )

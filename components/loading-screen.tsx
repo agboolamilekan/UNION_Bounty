@@ -7,6 +7,9 @@ export function LoadingScreen() {
         <Loader2 className="h-12 w-12 animate-spin text-purple-600 mx-auto mb-4" />
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Loading Union Vouching Graph</h1>
         <p className="text-gray-600 dark:text-gray-400">Fetching and processing data...</p>
+        <p className="text-xs text-gray-500 dark:text-gray-500 mt-4">
+          This app shows ENS and Farcaster names in the interactive graph
+        </p>
       </div>
     </div>
   )

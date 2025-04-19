@@ -12,6 +12,7 @@ export default function Home() {
   const [currentUser, setCurrentUser] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [isMounted, setIsMounted] = useState(false)
+  const [isFarcasterAvailable, setIsFarcasterAvailable] = useState(false)
 
   useEffect(() => {
     setIsMounted(true)
@@ -24,17 +25,22 @@ export default function Home() {
 
         let fid = null
 
-        // Try to get Farcaster client
-        try {
-          // @ts-ignore - Farcaster client is injected by Warpcast
-          const client = window.farcaster?.getClient()
-          if (client) {
-            const { data: userData } = await client.fetchCurrentUser()
-            fid = userData?.fid?.toString() || null
-            setCurrentUser(fid)
+        // Check if Farcaster client is available
+        if (window.farcaster) {
+          setIsFarcasterAvailable(true)
+          try {
+            // @ts-ignore - Farcaster client is injected by Warpcast
+            const client = window.farcaster.getClient()
+            if (client) {
+              const { data: userData } = await client.fetchCurrentUser()
+              fid = userData?.fid?.toString() || null
+              setCurrentUser(fid)
+            }
+          } catch (e) {
+            console.log("Error getting Farcaster user:", e)
           }
-        } catch (e) {
-          console.log("Farcaster client not available:", e)
+        } else {
+          console.log("Farcaster client not available")
         }
 
         // Fetch vouching data
@@ -106,17 +112,23 @@ export default function Home() {
 
   return (
     <main className="flex min-h-screen flex-col items-center p-4">
-      <h1 className="text-2xl font-bold mb-4">Union Vouching Graph</h1>
-      <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+      <h1 className="text-2xl font-bold mb-2">Union Vouching Graph</h1>
+      <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
         Interactive visualization of Union vouching relationships
       </p>
+
+      {!isFarcasterAvailable && (
+        <div className="mb-4 p-3 bg-yellow-100 text-yellow-800 rounded-md text-sm">
+          For the best experience, open this app in Warpcast
+        </div>
+      )}
 
       <div className="w-full h-[80vh] bg-white dark:bg-gray-900 rounded-lg shadow-lg overflow-hidden">
         <GraphVisualization data={graphData} currentUser={currentUser} />
       </div>
 
       <div className="mt-4 text-sm text-gray-600 dark:text-gray-400">
-        Click on a node to see its connections highlighted
+        Click on a node to see its connections highlighted and view ENS/Farcaster names
       </div>
     </main>
   )

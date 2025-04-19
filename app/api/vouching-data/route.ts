@@ -19,21 +19,56 @@ export async function GET() {
 }
 
 async function fetchUnionVouchingData(): Promise<GraphData> {
-  // In a real implementation, you would:
-  // 1. Query Union's contracts or a subgraph for vouching relationships
-  // 2. Fetch user profile data from Farcaster for each address
-  // 3. Format the data for the graph visualization
+  // Sample Farcaster names and ENS names
+  const fcastNames = [
+    "vitalik.eth",
+    "dwr.eth",
+    "punk6529",
+    "naval",
+    "balajis",
+    "cdixon",
+    "jessewldn",
+    "varun",
+    "paul",
+    "linda",
+    "packy",
+    "brian",
+    "jason",
+    "pomp",
+    "shl",
+  ]
 
-  // For now, we'll return mock data
+  const ensNames = [
+    "vitalik.eth",
+    "nick.eth",
+    "avsa.eth",
+    "ricmoo.eth",
+    "brantly.eth",
+    "sassal.eth",
+    "0age.eth",
+    "0xstark.eth",
+    "0xmaki.eth",
+    "0xngmi.eth",
+    "0xshual.eth",
+    "0xiam.eth",
+    "0xdefi.eth",
+    "0xbitcoin.eth",
+    "0xdai.eth",
+  ]
+
   const nodes = []
   const links = []
 
-  // Generate some random nodes with Farcaster-like data
+  // Generate some random nodes with realistic names
   for (let i = 1; i <= 50; i++) {
+    const useFname = i % 3 === 0
+    const useEns = i % 3 === 1
+
     nodes.push({
       id: `user${i}`,
       name: `User ${i}`,
-      fname: `user${i}.eth`,
+      fname: useFname ? fcastNames[i % fcastNames.length] : undefined,
+      ens: useEns ? ensNames[i % ensNames.length] : undefined,
       fid: `${1000 + i}`,
       img: i % 5 === 0 ? `/placeholder.svg?height=100&width=100` : undefined,
     })

@@ -4,19 +4,19 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
 
-    // Process the frame action
-    // In a real implementation, you would validate the frame signature
+    // Log the request for debugging
+    console.log("Frame request:", body)
 
-    // Return a frame response
+    // Return a frame response that redirects to the main app
     return NextResponse.json({
-      image: "https://your-vercel-app.vercel.app/api/og",
+      image: "https://union-vouching-graph.vercel.app/api/og",
       buttons: [
         {
-          label: "Open Graph Visualization",
+          label: "View Interactive Graph",
           action: "post_redirect",
         },
       ],
-      post_url: "https://your-vercel-app.vercel.app",
+      post_url: "https://union-vouching-graph.vercel.app",
     })
   } catch (error) {
     console.error("Error processing frame action:", error)

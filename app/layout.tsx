@@ -9,6 +9,19 @@ const inter = Inter({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "Union Vouching Graph",
   description: "Interactive visualization of Union vouching relationships",
+  // Add OpenGraph metadata
+  openGraph: {
+    title: "Union Vouching Graph",
+    description: "Interactive visualization of Union vouching relationships",
+    images: [
+      {
+        url: "https://union-vouching-graph.vercel.app/api/og",
+        width: 1200,
+        height: 630,
+        alt: "Union Vouching Graph",
+      },
+    ],
+  },
     generator: 'v0.dev'
 }
 
@@ -20,11 +33,19 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <meta name="fc:frame" content="vNext" />
-        <meta name="fc:frame:image" content="https://your-vercel-app.vercel.app/api/og" />
-        <meta name="fc:frame:button:1" content="View Graph" />
-        <meta property="og:image" content="https://your-vercel-app.vercel.app/api/og" />
-        <meta property="fc:frame:post_url" content="https://your-vercel-app.vercel.app/api/frame" />
+        {/* Farcaster Frame metadata */}
+        <meta property="fc:frame" content="vNext" />
+        <meta property="fc:frame:image" content="https://union-vouching-graph.vercel.app/api/og" />
+        <meta property="fc:frame:button:1" content="View Interactive Graph" />
+        <meta property="fc:frame:post_url" content="https://union-vouching-graph.vercel.app/api/frame" />
+
+        {/* Farcaster Mini App metadata */}
+        <meta property="og:title" content="Union Vouching Graph" />
+        <meta property="og:description" content="Interactive visualization of Union vouching relationships" />
+        <meta property="og:image" content="https://union-vouching-graph.vercel.app/api/og" />
+
+        {/* Farcaster Mini App manifest */}
+        <link rel="farcaster-app" href="/manifest.json" />
       </head>
       <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
