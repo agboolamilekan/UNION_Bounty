@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react"
 import * as d3 from "d3"
+import { ethers } from "ethers"
 
 interface GraphNode {
   id: string
@@ -83,6 +84,17 @@ export function FallbackGraph({ data }: FallbackGraphProps) {
       .force("charge", d3.forceManyBody().strength(-200))
       .force("center", d3.forceCenter(width / 2, height / 2))
 
+    // Function to validate Ethereum address
+    function isValidEthereumAddress(address: string): boolean {
+      try {
+        // Use ethers.js to validate the address
+        ethers.utils.getAddress(address)
+        return true
+      } catch (error) {
+        return false
+      }
+    }
+
     // Process the graph data
     const processData = async () => {
       // Process nodes to ensure they have names and pfps
@@ -93,8 +105,13 @@ export function FallbackGraph({ data }: FallbackGraphProps) {
         } else if (node.fname) {
           node.name = node.fname
         } else if (node.address) {
-          // Use shortened address format
-          node.name = `${node.address.substring(0, 6)}...${node.address.substring(node.address.length - 4)}`
+          if (isValidEthereumAddress(node.address)) {
+            // Use shortened address format for valid addresses
+            node.name = `${node.address.substring(0, 6)}...${node.address.substring(node.address.length - 4)}`
+          } else {
+            // For invalid addresses, mark them as invalid
+            node.name = `Invalid: ${node.address.substring(0, 10)}...`
+          }
         } else {
           // Fallback to ID
           node.name = node.id

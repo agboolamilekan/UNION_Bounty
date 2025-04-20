@@ -2,41 +2,29 @@
   "nodes": [
     {
       "id": "user1",
-      "address": "0x1234567890abcdef1234567890abcdef12345678",
+      "address": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
       "pfp": "https://via.placeholder.com/50?text=U1"
     },
     {
       "id": "user2",
-      "address": "0xabcdef1234567890abcdef1234567890abcdef12",
+      "address": "0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B",
       "pfp": "https://via.placeholder.com/50?text=U2"
     },
     {
       "id": "user3",
-      "address": "0x7890abcdef1234567890abcdef1234567890abcd",
+      "address": "0x1b9C16e781F16B7eE4d7a8eA1215f17E85CdBC7D",
       "pfp": "https://via.placeholder.com/50?text=U3"
     },
     {
       "id": "user4",
-      "address": "0x4567890abcdef1234567890abcdef1234567890",
+      "address": "Invalid-Address-Example",
       "pfp": "https://via.placeholder.com/50?text=U4"
     }
   ],
   "links": [
-    {
-      "source": "user1",
-      "target": "user2"
-    },
-    {
-      "source": "user2",
-      "target": "user3"
-    },
-    {
-      "source": "user3",
-      "target": "user1"
-    },
-    {
-      "source": "user1",
-      "target": "user4"
-    }
+    { "source": "user1", "target": "user2" },
+    { "source": "user2", "target": "user3" },
+    { "source": "user3", "target": "user1" },
+    { "source": "user1", "target": "user4" }
   ]
 }

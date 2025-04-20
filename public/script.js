@@ -38,26 +38,30 @@ const simulation = d3
   .force("charge", d3.forceManyBody().strength(-200))
   .force("center", d3.forceCenter(width / 2, height / 2))
 
+// Function to validate Ethereum address
+function isValidEthereumAddress(address) {
+  try {
+    // Use ethers.js to validate the address
+    ethers.utils.getAddress(address)
+    return true
+  } catch (error) {
+    return false
+  }
+}
+
 // Function to resolve ENS names (or fallback to address)
 async function resolveENS(address) {
   try {
-    // Use the provided Infura API key with explicit network configuration
-    const infuraUrl = "https://mainnet.infura.io/v3/d771e24f2c9d4bae839bc2c965b3e10b"
+    // Validate the address first
+    if (!isValidEthereumAddress(address)) {
+      console.warn(`Invalid Ethereum address: ${address}`)
+      return address // Return the original address if invalid
+    }
 
-    // Create provider with explicit network configuration
-    const provider = new ethers.providers.JsonRpcProvider(infuraUrl, {
-      name: "mainnet",
-      chainId: 1,
-    })
-
-    // Set a timeout for the ENS resolution
-    const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error("ENS resolution timeout")), 3000)
-    })
-
-    // Race the ENS resolution against the timeout
-    const ensName = await Promise.race([provider.lookupAddress(address), timeoutPromise])
-
+    // Use Alchemy provider with the provided API key
+    const alchemyUrl = "https://eth-mainnet.g.alchemy.com/v2/tsxCvYy79W03SFbWbupd2ZC65gDKvHSj"
+    const provider = new ethers.providers.JsonRpcProvider(alchemyUrl)
+    const ensName = await provider.lookupAddress(address)
     return ensName || address // Fallback to address if no ENS name
   } catch (error) {
     console.error(`Error resolving ENS for ${address}:`, error.message)
@@ -71,11 +75,11 @@ d3.json("graph.json")
     // Process nodes to resolve ENS names
     for (const node of data.nodes) {
       if (node.address) {
-        try {
+        if (isValidEthereumAddress(node.address)) {
           node.name = await resolveENS(node.address)
-        } catch (error) {
-          console.error(`Failed to resolve ENS for ${node.address}:`, error)
-          node.name = node.address // Fallback to address on error
+        } else {
+          // For invalid addresses, use a shortened version
+          node.name = `${node.address.substring(0, 6)}...${node.address.substring(node.address.length - 4)}`
         }
       } else {
         node.name = node.id // Fallback to ID if no address
